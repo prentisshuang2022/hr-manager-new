@@ -64,6 +64,7 @@ const items: NavItem[] = [
       { title: "新建考核", url: "/performance/assessments/new" },
       { title: "指标库管理", url: "/performance/indicators" },
       { title: "员工绩效管理", url: "/performance/reviews" },
+      { title: "部门汇总", url: "/performance/department-summary" },
     ],
   },
   {

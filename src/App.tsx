@@ -28,6 +28,7 @@ import PerformanceHome from "@/modules/performance/pages/PerformanceHome";
 import PerformanceNewAssessment from "@/modules/performance/pages/NewAssessment";
 import PerformanceIndicators from "@/modules/performance/pages/Indicators";
 import PerformancePage from "@/modules/performance/pages/Performance";
+import PerformanceDeptSummary from "@/modules/performance/pages/DepartmentSummary";
 import TrainingHome from "@/modules/training/pages/TrainingHome";
 import QuestionBank from "@/modules/training/pages/QuestionBank";
 import ExamCenter from "@/modules/training/pages/ExamCenter";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/performance/assessments/new" element={<PerformanceNewAssessment />} />
             <Route path="/performance/indicators" element={<PerformanceIndicators />} />
             <Route path="/performance/reviews" element={<PerformancePage />} />
+            <Route path="/performance/department-summary" element={<PerformanceDeptSummary />} />
 
             <Route path="/training" element={<TrainingHome />} />
             <Route path="/training/question-bank" element={<QuestionBank />} />
