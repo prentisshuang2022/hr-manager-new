@@ -4,14 +4,32 @@ import { SectionCard } from "@/modules/training/components/SectionCard";
 import { Button } from "@/components/ui/button";
 import {
   Upload, FileText, CheckCircle2, Loader2, ArrowRight,
-  FileCheck2, ListChecks, FileOutput, X,
+  FileCheck2, ListChecks, FileOutput, X, Video, BookOpen, ClipboardList, FileType,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 type Step = 1 | 2 | 3;
 
-type Material = { name: string; size: string };
+type MaterialType = "视频" | "操作手册" | "SOP" | "文档";
+type Material = { name: string; size: string; type: MaterialType };
+
+const materialTypeMeta: Record<MaterialType, {
+  icon: typeof Video;
+  accept: string;
+  ext: string;
+  desc: string;
+  tone: string;
+  iconBg: string;
+  iconColor: string;
+}> = {
+  "视频":   { icon: Video,         accept: "MP4 / MOV / WebM", ext: "mp4",  desc: "面向高管的视频培训，AI 自动转写后生成题目", tone: "bg-purple-soft text-purple",   iconBg: "bg-purple-soft",  iconColor: "text-purple" },
+  "操作手册": { icon: BookOpen,      accept: "PDF / Word",       ext: "pdf",  desc: "系统操作手册，按章节抽取知识点",          tone: "bg-info-soft text-info",       iconBg: "bg-info-soft",    iconColor: "text-info" },
+  "SOP":    { icon: ClipboardList, accept: "PDF / Word / MD",  ext: "pdf",  desc: "标准作业流程，按步骤生成判断与单选题",      tone: "bg-warning-soft text-warning", iconBg: "bg-warning-soft", iconColor: "text-warning" },
+  "文档":   { icon: FileType,      accept: "PDF / PPT / MD",   ext: "pdf",  desc: "通用培训文档，按段落抽取知识点",          tone: "bg-primary-soft text-primary", iconBg: "bg-primary-soft", iconColor: "text-primary" },
+};
+
+const materialTypeNames: MaterialType[] = ["视频", "操作手册", "SOP", "文档"];
 
 type Question = {
   id: number;
@@ -35,13 +53,27 @@ export default function QuestionBank() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [activeType, setActiveType] = useState<MaterialType>("操作手册");
   const [building, setBuilding] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
 
   const addMockMaterial = () => {
+    const meta = materialTypeMeta[activeType];
+    const idx = materials.filter((x) => x.type === activeType).length + 1;
+    const sampleNames: Record<MaterialType, string> = {
+      "视频":   `高管管理力培训 第${idx}讲.mp4`,
+      "操作手册": `业务系统操作手册 v${idx + 1}.pdf`,
+      "SOP":    `安全作业SOP-${idx}.pdf`,
+      "文档":   `培训资料 v${idx + 1}.${meta.ext}`,
+    };
+    const sizeBase = activeType === "视频" ? 120 + idx * 25 : 1.2 + idx * 0.4;
     setMaterials((m) => [
       ...m,
-      { name: `安全规范 v${m.length + 3}.pdf`, size: `${(1.2 + m.length * 0.4).toFixed(1)} MB` },
+      {
+        name: sampleNames[activeType],
+        size: activeType === "视频" ? `${sizeBase.toFixed(0)} MB` : `${sizeBase.toFixed(1)} MB`,
+        type: activeType,
+      },
     ]);
   };
 
@@ -85,6 +117,8 @@ export default function QuestionBank() {
   };
 
   const selectedCount = questions.filter((q) => q.selected).length;
+  const activeMeta = materialTypeMeta[activeType];
+  const ActiveIcon = activeMeta.icon;
 
   return (
     <div className="space-y-6">
@@ -149,16 +183,58 @@ export default function QuestionBank() {
       {step === 1 && (
         <SectionCard
           title="上传培训材料"
-          subtitle="支持 PDF / Word / PPT / Markdown，单文件 ≤ 50MB"
+          subtitle="支持视频 / 操作手册 / SOP / 文档，单文件 ≤ 500MB"
         >
+          {/* Material type selector */}
+          <div className="mb-5">
+            <div className="text-sm font-medium text-foreground mb-2">选择材料类型</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {materialTypeNames.map((t) => {
+                const meta = materialTypeMeta[t];
+                const Icon = meta.icon;
+                const active = activeType === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setActiveType(t)}
+                    className={`text-left rounded-xl border px-3 py-3 transition-colors ${
+                      active
+                        ? "border-primary bg-primary-soft"
+                        : "border-border bg-card hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`size-8 rounded-lg grid place-items-center ${meta.iconBg}`}>
+                        <Icon className={`size-4 ${meta.iconColor}`} />
+                      </div>
+                      <div className={`text-sm font-medium ${active ? "text-primary" : "text-foreground"}`}>
+                        {t}
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+                      {meta.accept}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground">
+              当前类型：<span className="text-foreground font-medium">{activeType}</span> · {activeMeta.desc}
+            </div>
+          </div>
+
           <div
             onClick={addMockMaterial}
             className="cursor-pointer rounded-xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 transition-colors p-10 grid place-items-center text-center"
           >
-            <Upload className="size-10 text-muted-foreground mb-3" />
-            <div className="font-medium text-foreground">拖拽培训材料到此处，或点击上传</div>
+            <div className={`size-12 rounded-xl ${activeMeta.iconBg} grid place-items-center mb-3`}>
+              <ActiveIcon className={`size-6 ${activeMeta.iconColor}`} />
+            </div>
+            <div className="font-medium text-foreground">
+              拖拽{activeType}到此处，或点击上传
+            </div>
             <div className="text-xs text-muted-foreground mt-1">
-              AI 将基于上传材料抽取知识点并生成题目
+              支持 {activeMeta.accept} · {activeType === "视频" ? "AI 自动转写视频后抽取知识点" : "AI 将抽取知识点并生成题目"}
             </div>
             <Button variant="outline" className="mt-4 pointer-events-none">选择文件</Button>
           </div>
@@ -169,27 +245,38 @@ export default function QuestionBank() {
                 已上传 {materials.length} 份材料
               </div>
               <ul className="space-y-2">
-                {materials.map((m, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5"
-                  >
-                    <div className="size-9 rounded-lg bg-primary-soft grid place-items-center">
-                      <FileText className="size-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-foreground truncate">{m.name}</div>
-                      <div className="text-xs text-muted-foreground">{m.size} · 已上传</div>
-                    </div>
-                    <FileCheck2 className="size-4 text-success" />
-                    <button
-                      onClick={() => removeMaterial(i)}
-                      className="size-7 rounded-md grid place-items-center hover:bg-muted text-muted-foreground"
+                {materials.map((m, i) => {
+                  const meta = materialTypeMeta[m.type];
+                  const Icon = meta.icon;
+                  return (
+                    <li
+                      key={i}
+                      className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5"
                     >
-                      <X className="size-4" />
-                    </button>
-                  </li>
-                ))}
+                      <div className={`size-9 rounded-lg ${meta.iconBg} grid place-items-center`}>
+                        <Icon className={`size-4 ${meta.iconColor}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-foreground truncate">{m.name}</div>
+                          <span className={`shrink-0 inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${meta.tone}`}>
+                            {m.type}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {m.size} · {m.type === "视频" ? "已上传，待转写" : "已上传"}
+                        </div>
+                      </div>
+                      <FileCheck2 className="size-4 text-success" />
+                      <button
+                        onClick={() => removeMaterial(i)}
+                        className="size-7 rounded-md grid place-items-center hover:bg-muted text-muted-foreground"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
