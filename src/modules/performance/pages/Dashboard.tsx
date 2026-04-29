@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
-import { FilePlus2, BookMarked, ClipboardCheck, Sparkles, TrendingUp, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { FilePlus2, BookMarked, ClipboardCheck, Sparkles, TrendingUp, AlertTriangle, CheckCircle2, Clock, Building2 } from "lucide-react";
 
 const stats = [
   { label: "进行中考核", value: "3", delta: "+1 本月", icon: ClipboardCheck, tone: "info" as const },
@@ -99,6 +99,9 @@ export default function Dashboard() {
               </div>
             </div>
             <Button variant="outline" className="w-full mt-2" asChild>
+              <Link to="/performance/department-summary"><Building2 className="size-4 mr-2" />查看部门汇总</Link>
+            </Button>
+            <Button variant="ghost" className="w-full" asChild>
               <Link to="/performance/indicators"><BookMarked className="size-4 mr-2" />打开指标库</Link>
             </Button>
           </div>
