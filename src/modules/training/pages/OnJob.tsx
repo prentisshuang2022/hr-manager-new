@@ -423,6 +423,7 @@ export default function OnJob() {
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {n.duration} · {n.owner}
                           </div>
+                          <div className="flex flex-wrap items-center gap-1 mt-2">
                           <span
                             className={`inline-flex mt-2 px-2 py-0.5 rounded-md text-[11px] font-medium ${
                               status === "done"
@@ -432,8 +433,26 @@ export default function OnJob() {
                                 : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            {status === "done" ? "已完成" : status === "doing" ? "进行中" : "待开始"}
+                            {status === "done"
+                              ? "已完成"
+                              : status === "doing"
+                              ? (awaitingConfirm && n.needConfirm ? "待学员确认" : "进行中")
+                              : "待开始"}
                           </span>
+                          {n.material !== "无" && (() => {
+                            const M = materialMeta[n.material];
+                            return (
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium ${M.tone}`}>
+                                <M.icon className="size-3" />{n.material}
+                              </span>
+                            );
+                          })()}
+                          {n.needConfirm && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-warning-soft text-warning">
+                              <ShieldCheck className="size-3" />需确认
+                            </span>
+                          )}
+                          </div>
                         </div>
                       </div>
                       {i < nodes.length - 1 && (
@@ -449,9 +468,37 @@ export default function OnJob() {
               </div>
             </div>
 
+            {nodes[currentNode]?.needConfirm && awaitingConfirm && (
+              <div className="mt-5 rounded-xl border border-warning/40 bg-warning-soft/40 p-4 flex items-start gap-3">
+                <div className="size-9 rounded-lg bg-warning/15 text-warning grid place-items-center shrink-0">
+                  <BellRing className="size-4" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-foreground">
+                    等待 {trainee} 确认接收「{nodes[currentNode].name}」
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    材料：{materialMeta[nodes[currentNode].material].label}。学员未确认前不会推进下一节点，避免导师漏通知。
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={remindTrainee}>
+                    <BellRing className="size-3.5 mr-1" />二次提醒
+                  </Button>
+                  <Button size="sm" onClick={confirmByTrainee} className="bg-warning text-warning-foreground hover:bg-warning/90">
+                    <CheckCircle2 className="size-3.5 mr-1" />学员确认
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 flex justify-between">
               <Button variant="outline" onClick={() => setStep(1)}>返回配置</Button>
-              <Button onClick={advanceNode} className="bg-primary hover:bg-primary/90">
+              <Button
+                onClick={advanceNode}
+                disabled={nodes[currentNode]?.needConfirm && awaitingConfirm}
+                className="bg-primary hover:bg-primary/90"
+              >
                 {currentNode < nodes.length - 1
                   ? "完成当前节点，推进下一个"
                   : "完成最后节点"}
