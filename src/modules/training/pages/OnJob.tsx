@@ -315,39 +315,63 @@ export default function OnJob() {
             {nodes.map((n, i) => (
               <div
                 key={n.id}
-                className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card"
+                className="p-3 rounded-lg border border-border bg-card space-y-2"
               >
-                <div className="size-8 rounded-lg bg-primary-soft text-primary grid place-items-center text-sm font-semibold shrink-0">
-                  {i + 1}
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-primary-soft text-primary grid place-items-center text-sm font-semibold shrink-0">
+                    {i + 1}
+                  </div>
+                  <input
+                    value={n.name}
+                    onChange={(e) => updateNode(n.id, { name: e.target.value })}
+                    placeholder="节点名称"
+                    className="flex-1 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  />
+                  <input
+                    value={n.duration}
+                    onChange={(e) => updateNode(n.id, { duration: e.target.value })}
+                    placeholder="时长"
+                    className="w-28 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  />
+                  <select
+                    value={n.owner}
+                    onChange={(e) => updateNode(n.id, { owner: e.target.value })}
+                    className="w-24 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  >
+                    <option>HR</option>
+                    <option>导师</option>
+                    <option>员工</option>
+                    <option>经理</option>
+                  </select>
+                  <button
+                    onClick={() => removeNode(n.id)}
+                    className="size-8 rounded-md grid place-items-center text-muted-foreground hover:bg-muted hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
                 </div>
-                <input
-                  value={n.name}
-                  onChange={(e) => updateNode(n.id, { name: e.target.value })}
-                  placeholder="节点名称"
-                  className="flex-1 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-                />
-                <input
-                  value={n.duration}
-                  onChange={(e) => updateNode(n.id, { duration: e.target.value })}
-                  placeholder="时长"
-                  className="w-28 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-                />
-                <select
-                  value={n.owner}
-                  onChange={(e) => updateNode(n.id, { owner: e.target.value })}
-                  className="w-24 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-                >
-                  <option>HR</option>
-                  <option>导师</option>
-                  <option>员工</option>
-                  <option>经理</option>
-                </select>
-                <button
-                  onClick={() => removeNode(n.id)}
-                  className="size-8 rounded-md grid place-items-center text-muted-foreground hover:bg-muted hover:text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                </button>
+                <div className="flex items-center gap-3 pl-11">
+                  <label className="text-xs text-muted-foreground shrink-0">材料类型</label>
+                  <select
+                    value={n.material}
+                    onChange={(e) => updateNode(n.id, { material: e.target.value as Material })}
+                    className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary"
+                  >
+                    <option>视频</option>
+                    <option>操作手册</option>
+                    <option>SOP</option>
+                    <option>无</option>
+                  </select>
+                  <label className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={n.needConfirm}
+                      onChange={(e) => updateNode(n.id, { needConfirm: e.target.checked })}
+                      className="size-3.5 accent-primary"
+                    />
+                    需学员确认（避免漏通知）
+                  </label>
+                </div>
               </div>
             ))}
           </div>
