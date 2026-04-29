@@ -16,7 +16,7 @@ const stats = [
 const ongoing = [
   { name: "2025 Q1 季度考核", scope: "市场营销部 · 32 人", node: "上级评分", progress: 62, status: "进行中" },
   { name: "2025 年 3 月月度考核", scope: "全公司 · 136 人", node: "员工自评", progress: 28, status: "进行中" },
-  { name: "2024 年度考核", scope: "管理层 · 18 人", node: "总经理确认", progress: 88, status: "即将完成" },
+  { name: "2024 年度考核", scope: "管理层 · 18 人", node: "上级评分", progress: 88, status: "即将完成" },
 ];
 
 export default function Dashboard() {
