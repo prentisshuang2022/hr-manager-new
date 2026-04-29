@@ -38,7 +38,7 @@ const defaultNodes: Node[] = [
   { id: 5, name: "阶段考核", duration: "Day 14", owner: "HR", material: "无", needConfirm: false },
 ];
 
-const materialMeta: Record<Material, { icon: typeof Video; tone: string; label: string }> = {
+const materialMeta: { [K in Material]: { icon: typeof Video; tone: string; label: string } } = {
   "视频": { icon: Video, tone: "bg-purple-soft text-purple", label: "视频材料（高管/宣导）" },
   "操作手册": { icon: BookOpen, tone: "bg-info-soft text-info", label: "操作手册" },
   "SOP": { icon: ClipboardList, tone: "bg-warning-soft text-warning", label: "SOP 标准流程" },
