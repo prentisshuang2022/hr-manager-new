@@ -3,7 +3,7 @@ import { PageHeader } from "@/modules/training/components/PageHeader";
 import { SectionCard } from "@/modules/training/components/SectionCard";
 import { Button } from "@/components/ui/button";
 import {
-  Upload, FileText, CheckCircle2, Loader2, ArrowRight,
+  Upload, CheckCircle2, Loader2, ArrowRight,
   FileCheck2, ListChecks, FileOutput, X, Video, BookOpen, ClipboardList, FileType,
 } from "lucide-react";
 import { toast } from "sonner";
