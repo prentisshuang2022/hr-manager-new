@@ -6,27 +6,44 @@ import { Button } from "@/components/ui/button";
 import {
   CheckCircle2, Workflow, FolderArchive, ArrowRight,
   Plus, X, Trash2, Play, FileText, MessageSquare, Loader2,
+  Video, BookOpen, ClipboardList, BellRing, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type Step = 1 | 2 | 3 | 4;
 
-type Node = { id: number; name: string; duration: string; owner: string };
+type Material = "视频" | "操作手册" | "SOP" | "无";
+type Node = {
+  id: number;
+  name: string;
+  duration: string;
+  owner: string;
+  material: Material;
+  needConfirm: boolean;
+};
 
 type Record = {
   time: string;
   who: string;
-  type: "学习记录" | "实操记录" | "节点推进" | "汇总留存";
+  type: "学习记录" | "实操记录" | "节点推进" | "汇总留存" | "学员确认" | "通知提醒";
   text: string;
   ai?: boolean;
 };
 
 const defaultNodes: Node[] = [
-  { id: 1, name: "导师匹配 & 介绍", duration: "Day 1", owner: "HR" },
-  { id: 2, name: "岗位手册学习", duration: "Day 1-3", owner: "员工" },
-  { id: 3, name: "业务系统实操", duration: "Day 4-7", owner: "导师" },
-  { id: 4, name: "阶段考核", duration: "Day 14", owner: "HR" },
+  { id: 1, name: "导师匹配 & 介绍", duration: "Day 1", owner: "HR", material: "无", needConfirm: false },
+  { id: 2, name: "岗位手册学习", duration: "Day 1-3", owner: "员工", material: "操作手册", needConfirm: true },
+  { id: 3, name: "业务系统实操", duration: "Day 4-7", owner: "导师", material: "SOP", needConfirm: true },
+  { id: 4, name: "高管战略宣导（视频）", duration: "Day 10", owner: "员工", material: "视频", needConfirm: true },
+  { id: 5, name: "阶段考核", duration: "Day 14", owner: "HR", material: "无", needConfirm: false },
 ];
+
+const materialMeta: { [K in Material]: { icon: typeof Video; tone: string; label: string } } = {
+  "视频": { icon: Video, tone: "bg-purple-soft text-purple", label: "视频材料（高管/宣导）" },
+  "操作手册": { icon: BookOpen, tone: "bg-info-soft text-info", label: "操作手册" },
+  "SOP": { icon: ClipboardList, tone: "bg-warning-soft text-warning", label: "SOP 标准流程" },
+  "无": { icon: FileText, tone: "bg-muted text-muted-foreground", label: "无材料" },
+};
 
 export default function OnJob() {
   const navigate = useNavigate();
@@ -39,6 +56,8 @@ export default function OnJob() {
 
   // Step 2: progression
   const [currentNode, setCurrentNode] = useState(0);
+  // 当前节点是否已收到学员确认
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
 
   // Step 3: collected records
   const [records, setRecords] = useState<Record[]>([]);
@@ -67,7 +86,7 @@ export default function OnJob() {
   const addNode = () => {
     setNodes((ns) => [
       ...ns,
-      { id: Date.now(), name: "新节点", duration: "Day -", owner: "导师" },
+      { id: Date.now(), name: "新节点", duration: "Day -", owner: "导师", material: "操作手册", needConfirm: true },
     ]);
   };
 
@@ -86,18 +105,61 @@ export default function OnJob() {
     }
     setCurrentNode(0);
     setRecords([]);
+    setAwaitingConfirm(nodes[0].needConfirm);
     setStep(2);
     toast.success("AI 已开始按节点推进");
+    if (nodes[0].needConfirm) {
+      setRecords([{
+        time: "刚刚",
+        who: "AI 助手",
+        type: "通知提醒",
+        text: `已通知 ${trainee} 与导师启动「${nodes[0].name}」（${nodes[0].material}），等待学员确认接收`,
+        ai: true,
+      }]);
+    }
+  };
+
+  const confirmByTrainee = () => {
+    const node = nodes[currentNode];
+    setRecords((r) => [
+      {
+        time: "刚刚",
+        who: trainee,
+        type: "学员确认",
+        text: `已确认收到「${node.name}」的${node.material === "无" ? "通知" : node.material + "材料"}并开始学习`,
+      },
+      ...r,
+    ]);
+    setAwaitingConfirm(false);
+    toast.success("学员已确认，可继续推进");
+  };
+
+  const remindTrainee = () => {
+    setRecords((r) => [
+      {
+        time: "刚刚",
+        who: "AI 助手",
+        type: "通知提醒",
+        text: `已二次提醒 ${trainee} 及导师关注「${nodes[currentNode].name}」节点`,
+        ai: true,
+      },
+      ...r,
+    ]);
+    toast.info("已发送提醒");
   };
 
   const advanceNode = () => {
     const node = nodes[currentNode];
+    if (node.needConfirm && awaitingConfirm) {
+      toast.error("该节点需要学员确认后才能推进");
+      return;
+    }
     const newRecords: Record[] = [
       {
         time: "刚刚",
         who: trainee,
         type: currentNode === 0 ? "学习记录" : "实操记录",
-        text: `完成「${node.name}」相关任务，用时 ${20 + currentNode * 15} 分钟`,
+        text: `完成「${node.name}」相关任务（${node.material}），用时 ${20 + currentNode * 15} 分钟`,
       },
       {
         time: "刚刚",
@@ -113,7 +175,18 @@ export default function OnJob() {
     setRecords((r) => [...newRecords, ...r]);
 
     if (currentNode < nodes.length - 1) {
-      setCurrentNode(currentNode + 1);
+      const nextIdx = currentNode + 1;
+      setCurrentNode(nextIdx);
+      setAwaitingConfirm(nodes[nextIdx].needConfirm);
+      if (nodes[nextIdx].needConfirm) {
+        setRecords((r) => [{
+          time: "刚刚",
+          who: "AI 助手",
+          type: "通知提醒",
+          text: `已通知 ${trainee} 与导师启动「${nodes[nextIdx].name}」（${nodes[nextIdx].material}），等待学员确认接收`,
+          ai: true,
+        }, ...r]);
+      }
     } else {
       setStep(3);
       toast.success("全部节点已完成，请汇总留存");
@@ -144,6 +217,7 @@ export default function OnJob() {
     setStep(1);
     setNodes(defaultNodes);
     setCurrentNode(0);
+    setAwaitingConfirm(false);
     setRecords([]);
   };
 
@@ -241,39 +315,63 @@ export default function OnJob() {
             {nodes.map((n, i) => (
               <div
                 key={n.id}
-                className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card"
+                className="p-3 rounded-lg border border-border bg-card space-y-2"
               >
-                <div className="size-8 rounded-lg bg-primary-soft text-primary grid place-items-center text-sm font-semibold shrink-0">
-                  {i + 1}
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-primary-soft text-primary grid place-items-center text-sm font-semibold shrink-0">
+                    {i + 1}
+                  </div>
+                  <input
+                    value={n.name}
+                    onChange={(e) => updateNode(n.id, { name: e.target.value })}
+                    placeholder="节点名称"
+                    className="flex-1 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  />
+                  <input
+                    value={n.duration}
+                    onChange={(e) => updateNode(n.id, { duration: e.target.value })}
+                    placeholder="时长"
+                    className="w-28 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  />
+                  <select
+                    value={n.owner}
+                    onChange={(e) => updateNode(n.id, { owner: e.target.value })}
+                    className="w-24 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                  >
+                    <option>HR</option>
+                    <option>导师</option>
+                    <option>员工</option>
+                    <option>经理</option>
+                  </select>
+                  <button
+                    onClick={() => removeNode(n.id)}
+                    className="size-8 rounded-md grid place-items-center text-muted-foreground hover:bg-muted hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
                 </div>
-                <input
-                  value={n.name}
-                  onChange={(e) => updateNode(n.id, { name: e.target.value })}
-                  placeholder="节点名称"
-                  className="flex-1 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-                />
-                <input
-                  value={n.duration}
-                  onChange={(e) => updateNode(n.id, { duration: e.target.value })}
-                  placeholder="时长"
-                  className="w-28 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-                />
-                <select
-                  value={n.owner}
-                  onChange={(e) => updateNode(n.id, { owner: e.target.value })}
-                  className="w-24 h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-                >
-                  <option>HR</option>
-                  <option>导师</option>
-                  <option>员工</option>
-                  <option>经理</option>
-                </select>
-                <button
-                  onClick={() => removeNode(n.id)}
-                  className="size-8 rounded-md grid place-items-center text-muted-foreground hover:bg-muted hover:text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                </button>
+                <div className="flex items-center gap-3 pl-11">
+                  <label className="text-xs text-muted-foreground shrink-0">材料类型</label>
+                  <select
+                    value={n.material}
+                    onChange={(e) => updateNode(n.id, { material: e.target.value as Material })}
+                    className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary"
+                  >
+                    <option>视频</option>
+                    <option>操作手册</option>
+                    <option>SOP</option>
+                    <option>无</option>
+                  </select>
+                  <label className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={n.needConfirm}
+                      onChange={(e) => updateNode(n.id, { needConfirm: e.target.checked })}
+                      className="size-3.5 accent-primary"
+                    />
+                    需学员确认（避免漏通知）
+                  </label>
+                </div>
               </div>
             ))}
           </div>
@@ -325,6 +423,7 @@ export default function OnJob() {
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {n.duration} · {n.owner}
                           </div>
+                          <div className="flex flex-wrap items-center gap-1 mt-2">
                           <span
                             className={`inline-flex mt-2 px-2 py-0.5 rounded-md text-[11px] font-medium ${
                               status === "done"
@@ -334,8 +433,26 @@ export default function OnJob() {
                                 : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            {status === "done" ? "已完成" : status === "doing" ? "进行中" : "待开始"}
+                            {status === "done"
+                              ? "已完成"
+                              : status === "doing"
+                              ? (awaitingConfirm && n.needConfirm ? "待学员确认" : "进行中")
+                              : "待开始"}
                           </span>
+                          {n.material !== "无" && (() => {
+                            const M = materialMeta[n.material];
+                            return (
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium ${M.tone}`}>
+                                <M.icon className="size-3" />{n.material}
+                              </span>
+                            );
+                          })()}
+                          {n.needConfirm && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-warning-soft text-warning">
+                              <ShieldCheck className="size-3" />需确认
+                            </span>
+                          )}
+                          </div>
                         </div>
                       </div>
                       {i < nodes.length - 1 && (
@@ -351,9 +468,37 @@ export default function OnJob() {
               </div>
             </div>
 
+            {nodes[currentNode]?.needConfirm && awaitingConfirm && (
+              <div className="mt-5 rounded-xl border border-warning/40 bg-warning-soft/40 p-4 flex items-start gap-3">
+                <div className="size-9 rounded-lg bg-warning/15 text-warning grid place-items-center shrink-0">
+                  <BellRing className="size-4" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-foreground">
+                    等待 {trainee} 确认接收「{nodes[currentNode].name}」
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    材料：{materialMeta[nodes[currentNode].material].label}。学员未确认前不会推进下一节点，避免导师漏通知。
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={remindTrainee}>
+                    <BellRing className="size-3.5 mr-1" />二次提醒
+                  </Button>
+                  <Button size="sm" onClick={confirmByTrainee} className="bg-warning text-warning-foreground hover:bg-warning/90">
+                    <CheckCircle2 className="size-3.5 mr-1" />学员确认
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 flex justify-between">
               <Button variant="outline" onClick={() => setStep(1)}>返回配置</Button>
-              <Button onClick={advanceNode} className="bg-primary hover:bg-primary/90">
+              <Button
+                onClick={advanceNode}
+                disabled={nodes[currentNode]?.needConfirm && awaitingConfirm}
+                className="bg-primary hover:bg-primary/90"
+              >
                 {currentNode < nodes.length - 1
                   ? "完成当前节点，推进下一个"
                   : "完成最后节点"}
