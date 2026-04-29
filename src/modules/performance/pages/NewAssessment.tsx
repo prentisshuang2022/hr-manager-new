@@ -34,10 +34,7 @@ const aiIndicators = [
 ];
 const flow = [
   { role: "员工自评", days: 2 },
-  { role: "直属上级评分", days: 3 },
-  { role: "部门负责人评分", days: 2 },
-  { role: "HR 汇总", days: 1 },
-  { role: "总经理确认", days: 2 },
+  { role: "上级评分", days: 3 },
 ];
 
 export default function NewAssessment() {

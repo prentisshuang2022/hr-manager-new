@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
-import { FilePlus2, BookMarked, ClipboardCheck, Sparkles, TrendingUp, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { FilePlus2, BookMarked, ClipboardCheck, Sparkles, TrendingUp, AlertTriangle, CheckCircle2, Clock, Building2 } from "lucide-react";
 
 const stats = [
   { label: "进行中考核", value: "3", delta: "+1 本月", icon: ClipboardCheck, tone: "info" as const },
@@ -16,7 +16,7 @@ const stats = [
 const ongoing = [
   { name: "2025 Q1 季度考核", scope: "市场营销部 · 32 人", node: "上级评分", progress: 62, status: "进行中" },
   { name: "2025 年 3 月月度考核", scope: "全公司 · 136 人", node: "员工自评", progress: 28, status: "进行中" },
-  { name: "2024 年度考核", scope: "管理层 · 18 人", node: "总经理确认", progress: 88, status: "即将完成" },
+  { name: "2024 年度考核", scope: "管理层 · 18 人", node: "上级评分", progress: 88, status: "即将完成" },
 ];
 
 export default function Dashboard() {
@@ -99,6 +99,9 @@ export default function Dashboard() {
               </div>
             </div>
             <Button variant="outline" className="w-full mt-2" asChild>
+              <Link to="/performance/department-summary"><Building2 className="size-4 mr-2" />查看部门汇总</Link>
+            </Button>
+            <Button variant="ghost" className="w-full" asChild>
               <Link to="/performance/indicators"><BookMarked className="size-4 mr-2" />打开指标库</Link>
             </Button>
           </div>
